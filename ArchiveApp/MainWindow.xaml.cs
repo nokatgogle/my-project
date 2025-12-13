@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -96,6 +97,14 @@ namespace ArchiveApp
             if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
             {
                 MessageBox.Show("المجلد المحدد غير موجود.", "مسار غير صالح", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var destinationFullPath = Path.GetFullPath(destinationPath);
+            if (_files.Any(file => string.Equals(Path.GetFullPath(file), destinationFullPath, StringComparison.OrdinalIgnoreCase)))
+            {
+                MessageBox.Show("مسار الحفظ يطابق أحد الملفات المحددة للأرشفة. الرجاء اختيار اسم مختلف.", "مسار غير صالح", MessageBoxButton.OK, MessageBoxImage.Warning);
+                UpdateStatus("تم إيقاف إنشاء الأرشيف لأن مسار الحفظ يطابق ملفاً محدداً.");
                 return;
             }
 
