@@ -101,7 +101,8 @@ namespace ArchiveApp
             }
 
             var destinationFullPath = Path.GetFullPath(destinationPath);
-            if (_files.Any(file => string.Equals(Path.GetFullPath(file), destinationFullPath, StringComparison.OrdinalIgnoreCase)))
+            var selectedFullPaths = _files.Select(Path.GetFullPath).ToList();
+            if (selectedFullPaths.Any(path => string.Equals(path, destinationFullPath, StringComparison.OrdinalIgnoreCase)))
             {
                 MessageBox.Show("مسار الحفظ يطابق أحد الملفات المحددة للأرشفة. الرجاء اختيار اسم مختلف.", "مسار غير صالح", MessageBoxButton.OK, MessageBoxImage.Warning);
                 UpdateStatus("تم إيقاف إنشاء الأرشيف لأن مسار الحفظ يطابق ملفاً محدداً.");
@@ -112,6 +113,13 @@ namespace ArchiveApp
             {
                 if (File.Exists(destinationPath))
                 {
+                    if (selectedFullPaths.Any(path => string.Equals(path, destinationFullPath, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        MessageBox.Show("لا يمكن حذف ملف وجهته مطابقة لملف محدد للأرشفة. الرجاء اختيار اسم مختلف.", "مسار غير صالح", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        UpdateStatus("تم إيقاف إنشاء الأرشيف لتجنب حذف ملف من الملفات المحددة.");
+                        return;
+                    }
+
                     File.Delete(destinationPath);
                 }
 
