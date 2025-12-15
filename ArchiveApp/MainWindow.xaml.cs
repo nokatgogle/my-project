@@ -100,8 +100,16 @@ namespace ArchiveApp
                 return;
             }
 
+            var normalizedSources = _files
+                .Select(path => new
+                {
+                    Original = path,
+                    Full = Path.GetFullPath(path)
+                })
+                .ToList();
+
             var destinationFullPath = Path.GetFullPath(destinationPath);
-            if (_files.Any(file => string.Equals(Path.GetFullPath(file), destinationFullPath, StringComparison.OrdinalIgnoreCase)))
+            if (normalizedSources.Any(file => string.Equals(file.Full, destinationFullPath, StringComparison.OrdinalIgnoreCase)))
             {
                 MessageBox.Show("مسار الحفظ يطابق أحد الملفات المحددة للأرشفة. الرجاء اختيار اسم مختلف.", "مسار غير صالح", MessageBoxButton.OK, MessageBoxImage.Warning);
                 UpdateStatus("تم إيقاف إنشاء الأرشيف لأن مسار الحفظ يطابق ملفاً محدداً.");
@@ -110,38 +118,38 @@ namespace ArchiveApp
 
             try
             {
-                if (File.Exists(destinationPath))
+                if (File.Exists(destinationFullPath))
                 {
-                    File.Delete(destinationPath);
+                    File.Delete(destinationFullPath);
                 }
 
                 var compressionLevel = ResolveCompressionLevel();
-                using var archive = ZipFile.Open(destinationPath, ZipArchiveMode.Create);
+                using var archive = ZipFile.Open(destinationFullPath, ZipArchiveMode.Create);
 
                 var duplicates = new Dictionary<string, int>();
-                foreach (var file in _files)
+                foreach (var file in normalizedSources)
                 {
-                    if (!File.Exists(file))
+                    if (!File.Exists(file.Full))
                     {
                         continue;
                     }
 
-                    var entryName = Path.GetFileName(file);
+                    var entryName = Path.GetFileName(file.Original);
                     if (duplicates.TryGetValue(entryName, out var counter))
                     {
                         counter++;
                         duplicates[entryName] = counter;
-                        entryName = $"{Path.GetFileNameWithoutExtension(file)}_{counter}{Path.GetExtension(file)}";
+                        entryName = $"{Path.GetFileNameWithoutExtension(file.Original)}_{counter}{Path.GetExtension(file.Original)}";
                     }
                     else
                     {
                         duplicates[entryName] = 0;
                     }
 
-                    archive.CreateEntryFromFile(file, entryName, compressionLevel);
+                    archive.CreateEntryFromFile(file.Full, entryName, compressionLevel);
                 }
 
-                UpdateStatus($"تم إنشاء الأرشيف بنجاح في: {destinationPath}");
+                UpdateStatus($"تم إنشاء الأرشيف بنجاح في: {destinationFullPath}");
                 MessageBox.Show("تم إنشاء الأرشيف بنجاح!", "نجاح", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (IOException ioEx)
